@@ -9,7 +9,8 @@ class StoreModel(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(80))
 
-    items = db.relationship('ItemModel', lazy='dynamic') #load các đối tượng liên quan
+    # load các đối tượng liên quan
+    items = db.relationship('ItemModel', lazy='dynamic')
 
     def __init__(self, name):
         """
@@ -21,11 +22,23 @@ class StoreModel(db.Model):
         """
         Tra ve item json format
         """
-        return {'name': self.name, 'items': [item.json() for item in self.items]}
+        return {
+            'id': self.id,
+            'name': self.name,
+            'items': [item.json() for item in self.items]
+        }
 
     @classmethod
     def find_by_name(cls, name):
-        return cls.query.filter_by(name=name).first() # select * from tableName where name = name
+        # select * from tableName where name = name
+        return cls.query.filter_by(name=name).first()
+
+    @classmethod
+    def find_all(cls):
+        """
+        Lấy hết các Stores
+        """
+        return cls.query.all()
 
     def save_to_db(self):
         db.session.add(self)

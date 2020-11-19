@@ -12,12 +12,28 @@ class UserModel(db.Model):
         self.username = username
         self.password = password
 
+    def json(self):
+        """
+        Json stringify
+        """
+        return {
+            'id': self.id,
+            'username': self.username
+        }
+
     def save_to_db(self):
         """
         Ham luu thong tin vao db
         """
         db.session.add(self)
         db.session.commit()
+
+    def delete_from_db(self):
+        """
+        Xoa thong tin trong db
+        """
+        db.session.delete(self)
+        db.session.commit() 
 
     @classmethod
     def find_by_username(cls, username):
