@@ -1,8 +1,10 @@
-import re
+from blacklist import BLACKLIST
+from flask_jwt_extended.utils import get_jwt_identity, get_raw_jwt
+from flask_jwt_extended.view_decorators import jwt_required
 from models.user import UserModel
 from flask_restful import Resource, reqparse
 from werkzeug.security import safe_str_cmp
-from flask_jwt_extended import create_access_token, create_refresh_token
+from flask_jwt_extended import create_access_token, create_refresh_token, jwt_refresh_token_required
 
 _user_parser = reqparse.RequestParser()
 _user_parser.add_argument('username',
@@ -82,3 +84,28 @@ class UserLogin(Resource):
         return {
             'message': 'Invalid credentials'
         }, 401
+
+class UserLogout(Resource):
+    @jwt_required
+    def post(self):
+        jti = get_raw_jwt()['jti'] # jti is "JWT ID", a unique identifier for a JWT.
+        user_id = get_jwt_identity()
+        BLACKLIST.add(jti)
+        return {"message": "User <id={}> successfully logged out.".format(user_id)}, 200
+
+class RefreshToken(Resource):
+    """
+    Lam moi token het han
+    """
+    @jwt_refresh_token_required
+    def post(self):
+        """
+        Refresh Token
+        """
+        current_user = get_jwt_identity()
+        new_token = create_access_token(identity=current_user, fresh=False)
+        new_refresh_token = create_refresh_token(identity=current_user)
+        return {
+            'access_token': new_token,
+            'refresh_token': new_refresh_token
+        },200
