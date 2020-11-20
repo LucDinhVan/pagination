@@ -1,4 +1,5 @@
-from flask_jwt_extended.view_decorators import fresh_jwt_required
+from flask_jwt_extended.utils import get_jwt_identity
+from flask_jwt_extended.view_decorators import fresh_jwt_required, jwt_optional
 from flask_restful import Resource, reqparse
 from flask_jwt_extended import jwt_required, get_jwt_claims
 from models.item import ItemModel
@@ -71,8 +72,16 @@ class Item(Resource):
 
 
 class ItemList(Resource):
+    @jwt_optional
     def get(self):
+        user_id = get_jwt_identity()
+        items = [item.json() for item in ItemModel.find_all()]
+        if user_id:
+            return {'items': items}
+        return {
+            'items:' :[item['name'] for item in items],
+            'message': 'More data avaiable if you login'
+        }
         # cả 2 cách đều được, tuy nhiên thì map() hay dùng trong js hơn nên viết kiểu dưới cho
         # theo kiểu python
         # return {'items': list(map(lambda x: x.json(), ItemModel.query.all())) }
-        return {'items': [x.json() for x in ItemModel.find_all()]}
