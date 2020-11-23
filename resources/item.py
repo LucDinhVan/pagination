@@ -1,3 +1,4 @@
+from flask.globals import request
 from flask_jwt_extended.utils import get_jwt_identity
 from flask_jwt_extended.view_decorators import fresh_jwt_required, jwt_optional
 from flask_restful import Resource, reqparse
@@ -7,29 +8,27 @@ from models.item import ItemModel
 
 class Item(Resource):
     parser = reqparse.RequestParser()
-    parser.add_argument('price',
-                        type=float,
-                        required=True,
-                        help="This field cannot be left blank!"
-                        )
+    parser.add_argument(
+        "price", type=float, required=True, help="This field cannot be left blank!"
+    )
 
-    parser.add_argument('store_id',
-                        type=int,
-                        required=True,
-                        help="Every time needs a store id!"
-                        )
+    parser.add_argument(
+        "store_id", type=int, required=True, help="Every time needs a store id!"
+    )
 
     @jwt_required
     def get(self, name):
         item = ItemModel.find_by_name(name)
         if item:
             return item.json()
-        return {'message': 'Item not found'}, 404
+        return {"message": "Item not found"}, 404
 
     @fresh_jwt_required
     def post(self, name):
         if ItemModel.find_by_name(name):
-            return {'message': "An item with name '{}' already exists.".format(name)}, 400
+            return {
+                "message": "An item with name '{}' already exists.".format(name)
+            }, 400
 
         data = Item.parser.parse_args()
 
@@ -45,16 +44,14 @@ class Item(Resource):
     @fresh_jwt_required
     def delete(self, name):
         claims = get_jwt_claims()
-        if not claims['is_admin']:
-            return {
-                'message': 'Admin privilege required'
-            }
+        if not claims["is_admin"]:
+            return {"message": "Admin privilege required"}
 
         item = ItemModel.find_by_name(name)
         if item:
             item.delete_from_db()
 
-        return {'message': 'Item deleted'}
+        return {"message": "Item deleted"}
 
     @jwt_required
     def put(self, name):
@@ -63,8 +60,8 @@ class Item(Resource):
         if item is None:
             item = ItemModel(name, **data)
         else:
-            item.price = data['price']
-            item.store_id = data['store_id']
+            item.price = data["price"]
+            item.store_id = data["store_id"]
 
         item.save_to_db()
 
@@ -75,12 +72,24 @@ class ItemList(Resource):
     @jwt_optional
     def get(self):
         user_id = get_jwt_identity()
-        items = [item.json() for item in ItemModel.find_all()]
+        args = request.args
+        items = ItemModel.find_by_price(args)
+        # items = ItemModel.find_by_price(args['min_price'], args['max_price'])
+        # items = [item.json() for item in ItemModel.find_all()]
+        # listItems = items.items
         if user_id:
-            return {'items': items}
+            return {
+                "next": ("/items?min_price="+str(args['min_price'])+"&max_price="+str(args['max_price'])+"&page="+str(items.next_num)) if items.next_num else "",
+                "previous": ("/items?min_price="+str(args['min_price'])+"&max_price="+str(args['max_price'])+"&page="+str(items.prev_num)) if items.prev_num else "",
+                "count": items.total,
+                "items": [item.json() for item in items.items]
+            }
         return {
-            'items:' :[item['name'] for item in items],
-            'message': 'More data avaiable if you login'
+            "next": ("/items?min_price="+str(args['min_price'])+"&max_price="+str(args['max_price'])+"&page="+str(items.next_num)) if items.next_num else "",
+            "previous": ("/items?min_price="+str(args['min_price'])+"&max_price="+str(args['max_price'])+"&page="+str(items.prev_num)) if items.prev_num else "",
+            "count": items.total,
+            "items": [item.name for item in items.items],
+            "message": "More data avaiable if you login",
         }
         # cả 2 cách đều được, tuy nhiên thì map() hay dùng trong js hơn nên viết kiểu dưới cho
         # theo kiểu python

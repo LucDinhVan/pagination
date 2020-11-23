@@ -1,3 +1,4 @@
+from operator import and_
 from db import db
 
 
@@ -43,6 +44,17 @@ class ItemModel(db.Model):
         Trả về tất cả items
         """
         return cls.query.all()
+    
+    @classmethod
+    def find_by_price(cls, params):
+        """
+        Trả về tất cả items trong tầm giá
+        """
+        min_price = params.get('min_price', default=0, type=int)
+        max_price = params.get('max_price', default=999999, type=int)
+        page = params.get('page', default=1, type=int)
+        per_page = 10
+        return cls.query.filter(and_(cls.price >= min_price, cls.price <= max_price)).paginate(page,per_page,error_out=False)
 
     def save_to_db(self):
         db.session.add(self)
