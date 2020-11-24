@@ -16,3 +16,7 @@ https://flask-sqlalchemy.palletsprojects.com/en/2.x/api/#flask_sqlalchemy.Pagina
 https://stackoverflow.com/questions/55543011/flask-restful-pagination
 
 https://viblo.asia/p/tim-hieu-cac-phuong-thuc-authentication-voi-rest-api-bJzKmq2EK9N
+
+
+nghiên cứu phần lazy load and pagination tại đây
+http://quotes.toscrape.com/scroll
